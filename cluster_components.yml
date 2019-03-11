@@ -299,8 +299,8 @@ Resources:
       - Key: idle_timeout.timeout_seconds
         Value: '30'
       Subnets:
-        - !ImportValue simple-private-subnet-0
-        - !ImportValue simple-private-subnet-1
+        - !ImportValue simple-public-subnet-0
+        - !ImportValue simple-public-subnet-1
       SecurityGroups:
         - !Ref albSecurityGroup
   publicALBListener80:
