@@ -105,6 +105,14 @@ Resources:
       FromPort: 31000
       ToPort: 61000
       SourceSecurityGroupId: !Ref albSecurityGroup
+  ecsInstancesSecurityGroupSSH:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ecsInstancesSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: 172.27.0.0/16
   # Security Groups >
 
   # < Roles
@@ -247,9 +255,9 @@ Resources:
       ImageId:
         !FindInMap [ RegionMap, !Ref "AWS::Region", ECSImage ]
       InstanceType: !Ref instanceType
-      SecurityGroups:
-        - 
-          !Ref ecsInstancesSecurityGroup
+      SecurityGroups: 
+        -
+          !Ref 'ecsInstancesSecurityGroup'
       IamInstanceProfile: !Ref ec2InstanceProfile
       KeyName: !Ref keyName
       UserData:
@@ -257,7 +265,7 @@ Resources:
           #!/bin/bash -xe
           echo ECS_CLUSTER=${ecsCluster} >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ecsAutoScalingGroup --region ${AWS::Region}
   ecsAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:

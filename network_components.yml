@@ -130,6 +130,16 @@ Resources:
       RouteTableId: !Ref publicRouteTable
       DestinationCidrBlock: "0.0.0.0/0"
       GatewayId: !Ref internetGateway
+  publicSubnet0RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref publicSubnet0
+      RouteTableId: !Ref publicRouteTable
+  publicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref publicSubnet1
+      RouteTableId: !Ref publicRouteTable
   privateRouteTable0:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -156,6 +166,16 @@ Resources:
       RouteTableId: !Ref privateRouteTable1
       DestinationCidrBlock: "0.0.0.0/0"
       NatGatewayId: !Ref natGateway1
+  privateSubnet0RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref privateSubnet0
+      RouteTableId: !Ref privateRouteTable0
+  privateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref privateSubnet1
+      RouteTableId: !Ref privateRouteTable1
   # Route tables >
 
 Outputs:
