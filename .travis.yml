@@ -16,3 +16,4 @@ jobs:
       if: branch = master
       script:
         - python .travis_scripts/deploy_network.py --stack-name=simple-network-components --template=network_components.yml
+        - python .travis_scripts/deploy_cluster.py --stack-name=simple-cluster-components --template=cluster_components.yml --ssh-key-name ${SSH_KEY_NAME}
