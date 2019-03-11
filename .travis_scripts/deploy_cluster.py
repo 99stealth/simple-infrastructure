@@ -15,24 +15,30 @@ def stack_operations(client, stack_name, template, ssh_key_name, operation):
     if operation == "create":
         with open(template, 'r') as cfn_template:
             return client.create_stack(StackName=stack_name,
-                                       TemplateBody=cfn_template.read(),
-                                       Parameters=[
-                                           {
-                                                'ParameterKey': 'keyName',
-                                                'ParameterValue': ssh_key_name,
-                                           }
-                                        ])
+                                            TemplateBody=cfn_template.read(),
+                                            Parameters=[
+                                                {
+                                                    'ParameterKey': 'keyName',
+                                                    'ParameterValue': ssh_key_name,
+                                                },
+                                            ],
+                                            Capabilities=[
+                                               'CAPABILITY_NAMED_IAM'
+                                            ])
     elif operation == "update":
         with open(template, 'r') as cfn_template:
             try:
                 return client.update_stack(StackName=stack_name,
-                                           TemplateBody=cfn_template.read(),
-                                           Parameters=[
-                                           {
-                                                'ParameterKey': 'keyName',
-                                                'ParameterValue': ssh_key_name,
-                                           }
-                                        ])
+                                            TemplateBody=cfn_template.read(),
+                                            Parameters=[
+                                                {
+                                                    'ParameterKey': 'keyName',
+                                                    'ParameterValue': ssh_key_name,
+                                                },
+                                            ],
+                                            Capabilities=[
+                                               'CAPABILITY_NAMED_IAM'
+                                            ])
             except ClientError as e:
                 print ("[Skipping stack update] {0}".format(e))
     else:
