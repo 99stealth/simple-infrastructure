@@ -194,3 +194,13 @@ Outputs:
     Value: !Ref privateSubnet1
     Export:
       Name: simple-private-subnet-1
+  publicSubnet0:
+    Description: Public subnet 0
+    Value: !Ref publicSubnet0
+    Export:
+      Name: simple-public-subnet-0
+  publicSubnet1:
+    Description: Public subnet 1
+    Value: !Ref publicSubnet1
+    Export:
+      Name: simple-public-subnet-1
