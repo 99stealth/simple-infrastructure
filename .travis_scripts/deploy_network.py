@@ -24,7 +24,7 @@ def stack_operations(client, stack_name, template, operation):
                                            TemplateBody=cfn_template.read(),
                                            )
             except ClientError as e:
-                print ("[Skipping stack update] {0}").format(e)
+                print ("[Skipping stack update] {0}".format(e))
     else:
         print("Unknown operation {0}".format(operation))
         exit(1)
