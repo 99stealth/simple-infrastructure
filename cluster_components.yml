@@ -248,7 +248,7 @@ Resources:
       InstanceType: !Ref instanceType
       SecurityGroups:
         - 
-          ecsInstancesSecurityGroup
+          !Ref ecsInstancesSecurityGroup
       IamInstanceProfile: !Ref ec2InstanceProfile
       KeyName: !Ref keyName
       UserData:
