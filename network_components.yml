@@ -1,0 +1,176 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Simple network components. Version 1.0.0
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      CidrBlock: 172.27.0.0/16
+      Tags:
+        - Key: Name
+          Value: "Simple VPC"
+
+  # < Internet Gateway
+  internetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "Simple Internet Gateway"
+  attachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref internetGateway
+  # Internet Gateway >
+
+  # < Subnets
+  privateSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "172.27.0.0/24"
+      AvailabilityZone: 
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: 
+              Ref: "AWS::Region"
+      Tags:
+        - Key: Name
+          Value: Simple private subnet 0
+  publicSubnet0:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      CidrBlock: "172.27.127.0/24"
+      AvailabilityZone: 
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: 
+              Ref: "AWS::Region"
+      Tags:
+        - Key: Name
+          Value: Simple public subnet 0
+  privateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: "172.27.1.0/24"
+      AvailabilityZone: 
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: 
+              Ref: "AWS::Region"
+      Tags:
+        - Key: Name
+          Value: Simple private subnet 1
+  publicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      CidrBlock: "172.27.128.0/24"
+      AvailabilityZone: 
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: 
+              Ref: "AWS::Region"
+      Tags:
+        - Key: Name
+          Value: Simple public subnet 1
+  # Subnets >
+
+  # < Elastic IPs for NAT Gateways
+  natElasticIP0:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  natElasticIP1:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  # Elastic IPs for NAT Gateways
+
+  # < NAT Gateways
+  natGateway0:
+    DependsOn: attachInternetGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: 
+        !GetAtt natElasticIP0.AllocationId
+      SubnetId: !Ref publicSubnet0
+      Tags:
+        - Key: Name
+          Value: Simple VPC NAT Gateway 0
+  natGateway1:
+    DependsOn: attachInternetGateway
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: 
+        !GetAtt natElasticIP1.AllocationId
+      SubnetId: !Ref publicSubnet1
+      Tags:
+        - Key: Name
+          Value: Simple VPC NAT Gateway 1
+  # NAT Gateways >
+
+  # < Route tables
+  publicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Simple VPC Public Route Table
+  publicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref publicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref internetGateway
+  privateRouteTable0:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Simple VPC Private Route Table 0
+  privateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: Simple VPC Private Route Table 1
+  privateRouteToInternet0:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref privateRouteTable0
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref natGateway0
+  privateRouteToInternet1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref privateRouteTable1
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref natGateway1
+  # Route tables >
+
+Outputs:
+  VPC:
+    Description: VPC ID
+    Value: !Ref VPC
+    Export:
+      Name: simple-vpc
+  privateSubnet0:
+    Description: Private subnet 0
+    Value: !Ref privateSubnet0
+    Export:
+      Name: simple-private-subnet-0
+  privateSubnet1:
+    Description: Private subnet 1
+    Value: !Ref privateSubnet1
+    Export:
+      Name: simple-private-subnet-1

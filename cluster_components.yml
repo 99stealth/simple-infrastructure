@@ -1,0 +1,326 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Simple cluster components. Verion 1.0.0
+Parameters: 
+  instanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: 
+      - t3.micro
+      - t2.micro
+      - t3.medium
+      - t2.medium
+    Description: List of instance types which are available for current infrastructure
+    ConstraintDescription: Please choose a valid instance type
+  minClusterSize:
+    Type: Number
+    Description: Minimum number of instances in ECS cluster
+    Default: 2
+    MinValue: 1
+  maxClusterSize:
+    Type: Number
+    Description: Maximum number of instances in ECS cluster
+    Default: 3
+    MinValue: 2
+  clusterDesiredCapacirt:
+    Type: Number
+    Description: Instances desired capacity in ECS cluster
+    Default: 2
+    MinValue: 1
+  keyName:
+    Type : AWS::EC2::KeyPair::KeyName
+    Description: Amazon EC2 Key Pair for instances from ECS Cluster
+Mappings:
+  RegionMap:
+    us-east-2:
+      ECSImage: ami-0cca5d0eeadc8c3c4
+    us-east-1:
+      ECSImage: ami-0a6a36557ea3b9859
+    us-west-2:
+      ECSImage: ami-0d2f82a622136a696
+    us-west-1:
+      ECSImage: ami-066a6b3ae13abc046
+    eu-west-3:
+      ECSImage: ami-020cc3695affa4b6b
+    eu-west-2:
+      ECSImage: ami-0e1065cc4f7231034
+    eu-west-1:
+      ECSImage: ami-00921cd1ce43d567a
+    eu-central-1:
+      ECSImage: ami-042ae7188819e7e9b
+    eu-north-1:
+      ECSImage: ami-0a92075786c5779b9
+    ap-northeast-2:
+      ECSImage: ami-0e0d82e1272b5ae8a
+    ap-northeast-1:
+      ECSImage: ami-084cb340923dc7101
+    ap-southeast-2:
+      ECSImage: ami-051b682e0d63cc816
+    ap-southeast-1:
+      ECSImage: ami-0eb4239fe0f64fe58
+    ca-central-1:
+      ECSImage: ami-0d9198a587e83919b
+    ap-south-1:
+      ECSImage: ami-0d7805fed18723d71
+    sa-east-1:
+      ECSImage: ami-0c4cd93b06ee26c34
+    us-gov-east-1:
+      ECSImage: ami-04a689185b06da6db
+    us-gov-west-1:
+      ECSImage: ami-7a5d361b
+Resources:
+  # < Security Groups
+  albSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: simple-alb-security-group
+      GroupDescription: Application LoadBalancer security group
+      VpcId: !ImportValue simple-vpc
+  albSecurityGroupHTTPInbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref albSecurityGroup
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+  albSecurityGroupHTTPSInbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref albSecurityGroup
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+  ecsInstancesSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: simple-ecs-instances-security-group
+      GroupDescription: ECS Cluster security group
+      VpcId: !ImportValue simple-vpc
+  ecsInstancesSecurityGroupALBAccess:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref ecsInstancesSecurityGroup
+      IpProtocol: tcp
+      FromPort: 31000
+      ToPort: 61000
+      SourceSecurityGroupId: !Ref albSecurityGroup
+  # Security Groups >
+
+  # < Roles
+  ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: simple-ec2-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Statement:
+              - 
+                Effect: Allow
+                Action:
+                    - ecs:CreateCluster
+                    - ecs:DeregisterContainerInstance
+                    - ecs:DiscoverPollEndpoint
+                    - ecs:Poll
+                    - ecs:RegisterContainerInstance
+                    - ecs:StartTelemetrySession
+                    - ecs:Submit*
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                    - ecr:GetAuthorizationToken
+                    - ecr:BatchCheckLayerAvailability
+                    - ecr:GetDownloadUrlForLayer
+                    - ecr:GetRepositoryPolicy
+                    - ecr:DescribeRepositories
+                    - ecr:ListImages
+                    - ecr:DescribeImages
+                    - ecr:BatchGetImage
+                Resource: "*"
+  ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        -
+          !Ref ec2Role
+  ecsServiceAutoscalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: simple-ecs-service-autoscaling-role
+      AssumeRolePolicyDocument:
+        Statement:
+          - 
+            Effect: "Allow"
+            Principal:
+              Service:
+                -
+                  "application-autoscaling.amazonaws.com"
+            Action:
+              -
+                "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - application-autoscaling:*
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                Resource: "*"
+  ecsServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: simple-service-role
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                -
+                  "ecs.amazonaws.com"
+            Action:
+              -
+                "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: "Allow"
+                Action:
+                  - elasticloadbalancing:DeregisterInstancesFromLoadBalancer
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:Describe*
+                  - elasticloadbalancing:RegisterInstancesWithLoadBalancer
+                  - elasticloadbalancing:RegisterTargets
+                  - ec2:Describe*
+                  - ec2:AuthorizeSecurityGroupIngress
+                Resource: "*"
+  ecsTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: simple-ecs-task-execution-role
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+          -
+            Action: "sts:AssumeRole"
+            Principal:
+              Service: "ecs-tasks.amazonaws.com"
+            Effect: "Allow"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  # Roles >
+
+  # < ECS Cluster
+  ecsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: simple-cluster
+  ecsLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        !FindInMap [ RegionMap, !Ref "AWS::Region", ECSImage ]
+      InstanceType: !Ref instanceType
+      SecurityGroups:
+        - 
+          ecsInstancesSecurityGroup
+      IamInstanceProfile: !Ref ec2InstanceProfile
+      KeyName: !Ref keyName
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - - "#!/bin/bash -xe\n"
+            - echo ECS_CLUSTER=
+            - !Ref ecsCluster
+            - " >> /etc/ecs/ecs.config\n"
+            - "yum install -y aws-cfn-bootstrap\n"
+            - "/opt/aws/bin/cfn-signal -e $? "
+            - "         --stack "
+            - !Ref AWS::StackName
+            - "         --resource ECSAutoScalingGroup "
+            - "         --region "
+            - !Ref AWS::Region
+            - "\n"
+  ecsAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: simple-ecs-autoscaling-group
+      LaunchConfigurationName: !Ref ecsLaunchConfiguration
+      VPCZoneIdentifier:
+        - !ImportValue simple-private-subnet-0
+        - !ImportValue simple-private-subnet-1
+      MinSize: !Ref minClusterSize
+      MaxSize: !Ref maxClusterSize
+      DesiredCapacity: !Ref clusterDesiredCapacirt
+      MetricsCollection:
+        - Granularity: "1Minute"
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MinInstancesInService: 1
+        MaxBatchSize: 1
+        PauseTime: "PT5M"
+  # ECS Cluster >
+
+  # < Load Balancer
+  publicALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: simple-application-load-balancer
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: '30'
+      Subnets:
+        - !ImportValue simple-private-subnet-0
+        - !ImportValue simple-private-subnet-1
+      SecurityGroups:
+        - !Ref albSecurityGroup
+  publicALBListener80:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref publicALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            ContentType: "text/plain"
+            MessageBody: "Page not found"
+            StatusCode: "404"
+  # Load Balancer>
+
+Outputs:
+  ecsCluster:
+    Description: Logical ID of ECS Cluster
+    Value: !Ref ecsCluster
+    Export: 
+      Name: simple-cluster-logical-id

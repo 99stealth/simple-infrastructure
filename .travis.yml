@@ -1,0 +1,18 @@
+language: python
+python:
+  - 3.6
+
+install:
+  - pip install -r requirements.txt
+
+jobs:
+  include:
+    - stage: Templates validation
+      script:
+        - aws cloudformation validate-template --template-body file://network_components.yml
+        - aws cloudformation validate-template --template-body file://cluster_components.yml
+        - cfn-lint network_components.yml cfn-lint cluster_components.yml
+      stage: Deploy
+      if: branch = master
+      script:
+        - python .travis_scripts/deploy_network.py --stack-name=simple-network-components --template=network_components.yml
