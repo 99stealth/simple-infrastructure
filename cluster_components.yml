@@ -323,3 +323,18 @@ Outputs:
     Value: !Ref ecsCluster
     Export: 
       Name: simple-cluster-logical-id
+  ecsServiceAutoscalingRole:
+    Description: Services autoscaling role
+    Value: !GetAtt ecsServiceAutoscalingRole.Arn
+    Export:
+      Name: simple-ecs-service-autoscaling-role
+  ecsServiceRole:
+    Description: Services role
+    Value: !GetAtt ecsServiceRole.Arn
+    Export:
+      Name: simple-ecs-service-role
+  ecsTaskExecutionRole:
+    Description: Task execution role
+    Value: !GetAtt ecsTaskExecutionRole.Arn
+    Export:
+      Name: simple-task-definition-role
