@@ -337,4 +337,9 @@ Outputs:
     Description: Task execution role
     Value: !GetAtt ecsTaskExecutionRole.Arn
     Export:
-      Name: simple-task-definition-role
+      Name: simple-ecs-task-execution-role
+  publicALBListener80:
+    Description: Public ALB listener port 80 ARN
+    Value: !Ref publicALBListener80
+    Export:
+      Name: simple-alb-listener-port-80
