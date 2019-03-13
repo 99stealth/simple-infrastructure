@@ -5,6 +5,7 @@ This project is created only for educational purposes. So, feel free to *fork* a
 
 ## High level architecture
 Current infrastructure is deployed to AWS your AWS account using CloudFormation templates. There are two separate templates `network_components.yml` and `network_components.yml`.
+
 `network_components.yml` deploys such components as:
 - VPC
 - Internet Gateway
@@ -13,6 +14,7 @@ Current infrastructure is deployed to AWS your AWS account using CloudFormation 
 - Two NAT Gateways in both Private Subnets
 - Two Elastic IPs for NAT Gateways
 - Route Tables for Subnets
+
 `cluster_components.yml` deploys such components as:
 - Two Security Groups. 
   - Security group for ALB 
