@@ -28,34 +28,37 @@ def follow_cfn_stack(client, stack_name, try_timeout):
 
 def stack_operations(client, stack_name, template, ssh_key_name, try_timeout, operation):
     if operation == "create":
-        with open(template, 'r') as cfn_template:
-            return client.create_stack(StackName=stack_name,
-                                            TemplateBody=cfn_template.read(),
-                                            Parameters=[
-                                                {
-                                                    'ParameterKey': 'keyName',
-                                                    'ParameterValue': ssh_key_name,
-                                                },
-                                            ],
-                                            Capabilities=[
-                                               'CAPABILITY_NAMED_IAM'
-                                            ])
+        try:
+            with open(template, 'r') as cfn_template:
+                client.create_stack(StackName=stack_name,
+                                    TemplateBody=cfn_template.read(),
+                                    Parameters=[
+                                        {
+                                            'ParameterKey': 'keyName',
+                                            'ParameterValue': ssh_key_name,
+                                        },
+                                    ],
+                                    Capabilities=[
+                                       'CAPABILITY_NAMED_IAM'
+                                    ])
+        except ClientError as e:
+            print ("[Skipping stack create] {0}".format(e))
         if not follow_cfn_stack(client, stack_name, try_timeout):
             exit(1)
     elif operation == "update":
         with open(template, 'r') as cfn_template:
             try:
-                return client.update_stack(StackName=stack_name,
-                                            TemplateBody=cfn_template.read(),
-                                            Parameters=[
-                                                {
-                                                    'ParameterKey': 'keyName',
-                                                    'ParameterValue': ssh_key_name,
-                                                },
-                                            ],
-                                            Capabilities=[
-                                               'CAPABILITY_NAMED_IAM'
-                                            ])
+                client.update_stack(StackName=stack_name,
+                                    TemplateBody=cfn_template.read(),
+                                    Parameters=[
+                                        {
+                                            'ParameterKey': 'keyName',
+                                            'ParameterValue': ssh_key_name,
+                                        },
+                                    ],
+                                    Capabilities=[
+                                       'CAPABILITY_NAMED_IAM'
+                                    ])
             except ClientError as e:
                 print ("[Skipping stack update] {0}".format(e))
         if not follow_cfn_stack(client, stack_name, try_timeout):
@@ -76,10 +79,9 @@ def main():
     args = get_arguments()
     client = boto3.client('cloudformation')
     if stack_exists(client, args.stack_name):
-        status = stack_operations(client, args.stack_name, args.template, args.ssh_key_name, args.try_timeout, operation="update")
+        stack_operations(client, args.stack_name, args.template, args.ssh_key_name, args.try_timeout, operation="update")
     else:
-        status = stack_operations(client, args.stack_name, args.template, args.ssh_key_name, args.try_timeout, operation="create")
-    print (status)
+        stack_operations(client, args.stack_name, args.template, args.ssh_key_name, args.try_timeout, operation="create")
         
 
 if __name__ == "__main__":
