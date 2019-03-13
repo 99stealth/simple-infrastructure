@@ -11,7 +11,7 @@ jobs:
       script:
         - aws cloudformation validate-template --template-body file://network_components.yml
         - aws cloudformation validate-template --template-body file://cluster_components.yml
-        - cfn-lint network_components.yml cfn-lint cluster_components.yml
+        - cfn-lint network_components.yml cluster_components.yml
     - stage: Deploy
       if: branch = master
       script:
