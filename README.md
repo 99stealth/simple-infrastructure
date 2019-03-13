@@ -27,6 +27,7 @@ Current infrastructure is deployed to AWS your AWS account using CloudFormation 
 - Application Load Balancer and its Listener (which listens on port 80)
 
 ![Simple infrastructure](.images/simple_random_infrastructure_diagram.png "Title")
+~Figure 1. Simple random architecture~
 
 ## If you change infrastructure
 If you desided to add or remove any component from infrastructure, please make that change also on diagram which is stored in .images/simple_random_infrastructure_diagram. Regenerate `png` file and update it in the `README.md` in [High level architecture](#high-level-architecture)
