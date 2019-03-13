@@ -1,4 +1,5 @@
 #!python
+from time import sleep
 import boto3
 from botocore.exceptions import ClientError
 from argparse import ArgumentParser
@@ -11,7 +12,21 @@ def stack_exists(client, stack_name):
             return True
     return False
 
-def stack_operations(client, stack_name, template, operation):
+def follow_cfn_stack(client, stack_name, try_timeout):
+    while True:
+        cfn_stacks = client.describe_stacks(StackName=stack_name)
+        for stack in cfn_stacks["Stacks"]:
+            if "IN_PROGRESS" in stack["StackStatus"] and "ROLLBACK" not in stack["StackStatus"] and "DELETE" not in stack["StackStatus"]:
+                print ("Current stack status: {0}. Waiting {1} seconds".format(stack["StackStatus"], try_timeout))
+                sleep(try_timeout)
+            elif "COMPLETE" in stack["StackStatus"] and "DELETE" not in stack["StackStatus"]:
+                print ("Stack {0}".format(stack["StackStatus"]))
+                return True
+            else:
+                print ("Current stack is {0}. Exit with error".format(stack["StackStatus"]))
+                return False
+
+def stack_operations(client, stack_name, template, try_timeout, operation):
     if operation == "create":
         with open(template, 'r') as cfn_template:
             return client.create_stack(StackName=stack_name,
@@ -33,15 +48,16 @@ def get_arguments():
     parser = ArgumentParser(description='Check stack exists')
     parser.add_argument('--stack-name', help='CFn stack name', required=True)
     parser.add_argument('--template', help='CloudFormation template', required=True)
+    parser.add_argument('--try-timeout', help='Timeouts between tries', default=15)
     return parser.parse_args()
 
 def main():
     args = get_arguments()
     client = boto3.client('cloudformation')
     if stack_exists(client, args.stack_name):
-        status = stack_operations(client, args.stack_name, args.template, operation="update")
+        status = stack_operations(client, args.stack_name, args.template, args.try_timeout, operation="update")
     else:
-        status = stack_operations(client, args.stack_name, args.template, operation="create")
+        status = stack_operations(client, args.stack_name, args.template, args.try_timeout, operation="create")
     print (status)
         
 

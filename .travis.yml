@@ -12,7 +12,7 @@ jobs:
         - aws cloudformation validate-template --template-body file://network_components.yml
         - aws cloudformation validate-template --template-body file://cluster_components.yml
         - cfn-lint network_components.yml cfn-lint cluster_components.yml
-      stage: Deploy
+    - stage: Deploy
       if: branch = master
       script:
         - python .travis_scripts/deploy_network.py --stack-name=simple-network-components --template=network_components.yml
