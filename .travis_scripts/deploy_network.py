@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 
 
 def stack_exists(client, stack_name):
+    """ Checks that stack was specified is existing """
     cfn_stacks = client.list_stacks()
     for cfn_stack in cfn_stacks["StackSummaries"]:
         if cfn_stack['StackName'] == stack_name and "COMPLETE" in cfn_stack['StackStatus'] and "DELETE" not in cfn_stack['StackStatus']:
@@ -13,6 +14,7 @@ def stack_exists(client, stack_name):
     return False
 
 def follow_cfn_stack(client, stack_name, try_timeout):
+    """ Listens for Success status while CFn stack is creating or updating"""
     while True:
         cfn_stacks = client.describe_stacks(StackName=stack_name)
         for stack in cfn_stacks["Stacks"]:
@@ -27,6 +29,7 @@ def follow_cfn_stack(client, stack_name, try_timeout):
                 return False
 
 def stack_operations(client, stack_name, template, try_timeout, operation):
+    """ Creates or updates CFn stack with received parameters """
     if operation == "create":
         try:
             with open(template, 'r') as cfn_template:
@@ -53,6 +56,7 @@ def stack_operations(client, stack_name, template, try_timeout, operation):
 
 
 def get_arguments():
+    """ Gets parameters from command line """
     parser = ArgumentParser(description='Check stack exists')
     parser.add_argument('--stack-name', help='CFn stack name', required=True)
     parser.add_argument('--template', help='CloudFormation template', required=True)
@@ -60,12 +64,23 @@ def get_arguments():
     return parser.parse_args()
 
 def main():
+    """ main function which receives arguments, calls AWS client and runs update or create CFn stack """
     args = get_arguments()
     client = boto3.client('cloudformation')
     if stack_exists(client, args.stack_name):
-        stack_operations(client, args.stack_name, args.template, args.try_timeout, operation="update")
+        stack_operations(
+            client, 
+            args.stack_name, 
+            args.template, 
+            args.try_timeout, 
+            operation="update")
     else:
-        stack_operations(client, args.stack_name, args.template, args.try_timeout, operation="create")
+        stack_operations(
+            client, 
+            args.stack_name, 
+            args.template, 
+            args.try_timeout, 
+            operation="create")
         
 
 if __name__ == "__main__":
