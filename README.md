@@ -41,7 +41,7 @@ Current infrastructure is deployed to AWS your AWS account using CloudFormation 
   - ECS Autoscaling role
   - ECS Task execution role
   - ECS Service role
-- ECS Cluste
+- ECS Cluster
 - Launch configuration and AutoScaling group
 - Application Load Balancer and its Listener (which listens on port 80)
 
