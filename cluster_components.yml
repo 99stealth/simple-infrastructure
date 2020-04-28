@@ -21,7 +21,7 @@ Parameters:
     Description: Maximum number of instances in ECS cluster
     Default: 3
     MinValue: 2
-  clusterDesiredCapacirt:
+  clusterDesiredCapacity:
     Type: Number
     Description: Instances desired capacity in ECS cluster
     Default: 2
@@ -29,6 +29,33 @@ Parameters:
   keyName:
     Type : AWS::EC2::KeyPair::KeyName
     Description: Amazon EC2 Key Pair for instances from ECS Cluster
+Metadata: 
+  AWS::CloudFormation::Interface: 
+    ParameterGroups: 
+      - 
+        Label: 
+          default: "EC2 Configuration"
+        Parameters: 
+          - instanceType
+          - keyName
+      - 
+        Label: 
+          default: "ECS Configuration"
+        Parameters: 
+          - minClusterSize
+          - maxClusterSize
+          - clusterDesiredCapacity
+    ParameterLabels: 
+      instanceType: 
+        default: "Instance type"
+      keyName:
+        default: "SSH Key Name"
+      minClusterSize:
+        default: "Minimum cluster size"
+      maxClusterSize:
+        default: "Maximum cluster size"
+      clusterDesiredCapacity:
+        default: "Instances desired capacity in ECS cluster"
 Mappings:
   RegionMap:
     us-east-2:
@@ -68,7 +95,6 @@ Mappings:
     us-gov-west-1:
       ECSImage: ami-7a5d361b
 Resources:
-  # < Security Groups
   albSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -113,9 +139,6 @@ Resources:
       FromPort: 22
       ToPort: 22
       CidrIp: 172.27.0.0/16
-  # Security Groups >
-
-  # < Roles
   ec2Role:
     Type: AWS::IAM::Role
     Properties:
@@ -242,9 +265,6 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  # Roles >
-
-  # < ECS Cluster
   ecsCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -276,7 +296,7 @@ Resources:
         - !ImportValue simple-private-subnet-1
       MinSize: !Ref minClusterSize
       MaxSize: !Ref maxClusterSize
-      DesiredCapacity: !Ref clusterDesiredCapacirt
+      DesiredCapacity: !Ref clusterDesiredCapacity
       MetricsCollection:
         - Granularity: "1Minute"
     CreationPolicy:
@@ -287,9 +307,6 @@ Resources:
         MinInstancesInService: 1
         MaxBatchSize: 1
         PauseTime: "PT5M"
-  # ECS Cluster >
-
-  # < Load Balancer
   publicALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -315,8 +332,6 @@ Resources:
             ContentType: "text/plain"
             MessageBody: "Page not found"
             StatusCode: "404"
-  # Load Balancer>
-
 Outputs:
   ecsCluster:
     Description: Logical ID of ECS Cluster
